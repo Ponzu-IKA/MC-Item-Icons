@@ -41,7 +41,7 @@ jobs:
       - name: Export crate info
         shell: bash
         run: |
-          "PROJECT_NAME=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].name')"
+          PROJECT_NAME=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].name')
           echo "PROJECT_NAME=$PROJECT_NAME" >> $GITHUB_ENV
 
       # rustcやcargoをインストール
