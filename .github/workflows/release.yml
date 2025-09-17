@@ -1,0 +1,79 @@
+name: Release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - v*
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  Test:
+    uses: ./.github/workflows/testing.yml
+
+  build:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            extention: ""
+            runner: ubuntu-latest
+            cross: true
+
+          - target: x86_64-unknown-linux-musl
+            extention: ""
+            runner: ubuntu-latest
+            cross: false
+
+          - target: x86_64-pc-windows-msvc
+            extention: ".exe"
+            runner: windows-latest
+            cross: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Rustのプロジェクト名を取得し、PROJECT_NAMEに代入
+      - name: Export crate info
+        shell: bash
+        run: |
+          echo "PROJECT_NAME=$(sed -n 's/^name = "\(.*\)"/\1/p' Cargo.toml | head -n1)"
+
+      # rustcやcargoをインストール
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          override: true
+          profile: minimal
+
+      # targetに応じてビルド
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: ${{ matrix.cross }}
+          command: build
+          args: --release --target ${{ matrix.target }}
+
+      # ビルドが完了したものの名前を変更
+      - name: Rename artifacts
+        shell: bash
+        run: |
+          mv target/${{ matrix.target }}/release/${{ env.PROJECT_NAME }}{, -${{ github.ref_name }}-${{ matrix.target }}${{ matrix.extention }}}
+
+      # releaseにアップロード
+      - name: Release Artifacts
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: |
+            target/${{ matrix.target }}/release/${{ env.PROJECT_NAME }}-${{ github.ref_name }}-${{ matrix.target }}${{ matrix.extension }}
