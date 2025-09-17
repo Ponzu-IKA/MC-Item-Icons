@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{ArgGroup, Parser};
 use image::GenericImageView;
 use rayon::prelude::*;
 use std::fs;
@@ -35,13 +35,19 @@ impl FromStr for Pos {
 /// Minecraft Item Icon Cropper
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
+#[command(group(
+    ArgGroup::new("input")
+        .required(true)
+        .args(&["file", "directory"])
+        .multiple(false)
+))]
 struct Args {
     /// ファイルパス
-    #[arg(short, long, required_unless_present = "directory")]
+    #[arg(short, long)]
     file: Option<String>,
 
     /// ディレクトリパス
-    #[arg(short, long, required_unless_present = "file")]
+    #[arg(short, long)]
     directory: Option<String>,
 
     /// 出力パス(デフォルトはoutput)
@@ -147,26 +153,18 @@ fn main() -> Result<()> {
     println!("Minecraft Item Icon Cropper");
     println!("===========================");
 
-    match (&args.file, &args.directory) {
-        (Some(file), None) => {
+    match &(args.file.as_ref().or(args.directory.as_ref())) {
+        Some(file) if args.file.is_some() => {
             println!("Running with file processing mode.");
             let path = Path::new(&file);
             file_processor(&path, &args)?;
         }
-        (None, Some(dir)) => {
+        Some(dir) => {
             println!("Running with directory processing mode.");
             let path = Path::new(&dir);
             directory_processor(&path, &args)?;
         }
-        (Some(file), Some(dir)) => {
-            eprintln!("両方指定されました！");
-            eprintln!("ディレクトリフラグとファイル指定は共存できません。");
-            eprintln!("file: {}, dir: {}", file, dir);
-        }
-        (None, None) => {
-            eprintln!("エラー: file及び--directoryの指定がアリませんでした。");
-            std::process::exit(1);
-        }
+        _ => unreachable!("How Did We Get Here?"),
     }
 
     Ok(())
