@@ -85,7 +85,7 @@ fn file_processor(image_path: &Path, args: &Args) -> Result<()> {
     let image_name = get_filename(&image_path);
 
     //create output/$image_name directory
-    fs::create_dir_all(&format!("output/{}", image_name))?;
+    fs::create_dir_all(&format!("{}/{}", args.output, image_name))?;
 
     (0..9)
         .flat_map(|x| (0..5).map(move |y| (x, y)))
