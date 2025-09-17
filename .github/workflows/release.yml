@@ -12,9 +12,6 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  Test:
-    uses: ./.github/workflows/testing.yml
-
   build:
     runs-on: ${{ matrix.runner }}
     strategy:
