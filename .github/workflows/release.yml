@@ -41,7 +41,8 @@ jobs:
       - name: Export crate info
         shell: bash
         run: |
-          echo "PROJECT_NAME=$(sed -n 's/^name = "\(.*\)"/\1/p' Cargo.toml | head -n1)"
+          "PROJECT_NAME=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].name')"
+          echo "PROJECT_NAME=$PROJECT_NAME" >> $GITHUB_ENV
 
       # rustcやcargoをインストール
       - name: Install Rust toolchain
